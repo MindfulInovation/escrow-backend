@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   
     // --- CORS (TEMP: permissive for testing; we'll lock down later) ---
     const origin = req.headers.origin || '';
-    const allowed = /^https?:\/\/.+/i; // TODO: replace with your exact domains when wiring Webflow
+    const allowed = /^(https:\/\/(www\.)?domaingrid\.com|https:\/\/domaingrid-f181b9\.webflow\.io)$/i;
     if (!allowed.test(origin)) {
       return res.status(403).json({ error: 'Forbidden (Origin not allowed)' });
     }
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       currency,
       description: `Sale of ${title}`,
       reference,
-      return_url: 'https://yourdomain.com/thank-you', // change later
+      return_url: 'https://domaingrid.com/thank-you',
       redirect_type: 'automatic',
       items: [{
         title,
@@ -89,5 +89,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Server error' });
       }    
   }
-  
   
