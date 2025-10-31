@@ -46,7 +46,7 @@ export default async function handler(req, res) {
           payer_customer: 'buyer',
           beneficiary_customer: 'me'
         }],
-        fees: [{ type: 'escrow', split: '1', payer_customer: 'buyer' }]
+        fees: [{ type: 'escrow', split: 1, payer_customer: 'buyer' }]
       }],
       parties: [
         { role: 'buyer',  customer: 'buyer', agreed: true },
@@ -55,26 +55,39 @@ export default async function handler(req, res) {
     };
   
     try {
-      const resp = await fetch('https://api.escrow-sandbox.com/integration/pay/2018-03-31', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${AUTH}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-  
-      if (!resp.ok) {
-        const detail = await resp.text();
-        return res.status(502).json({ error: 'Escrow Pay failed', detail });
-      }
-  
-      const data = await resp.json(); // { landing_page, token, transaction_id }
-      return res.status(200).json({ url: data.landing_page });
-    } catch (e) {
-      console.error(e);
-      return res.status(500).json({ error: 'Server error' });
-    }
+        const resp = await fetch('https://api.escrow-sandbox.com/integration/pay/2018-03-31', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${AUTH}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+    
+        const text = await resp.text();                 // read raw body once
+        if (!resp.ok) {
+          console.error('Escrow Pay error', resp.status, text);
+          return res.status(502).json({
+            error: 'Escrow Pay failed',
+            status: resp.status,
+            detail: text
+          });
+        }
+    
+        // If ok, parse the json we already read
+        let data;
+        try { data = JSON.parse(text); }
+        catch { 
+          console.error('Escrow Pay: non-JSON success body', text);
+          return res.status(502).json({ error: 'Unexpected response from Escrow', detail: text });
+        }
+    
+        return res.status(200).json({ url: data.landing_page });
+      } catch (e) {
+        console.error('Server exception', e);
+        return res.status(500).json({ error: 'Server error' });
+      }    
   }
   
   
