@@ -76,7 +76,7 @@ export default async function handler(req, res) {
 
   
     try {
-        const resp = await fetch('https://api.escrow-sandbox.com/integration/pay/2018-03-31', {
+        const resp = await fetch('https://api.escrow.com/integration/pay/2018-03-31', {
           method: 'POST',
           headers: {
             'Authorization': `Basic ${AUTH}`,
