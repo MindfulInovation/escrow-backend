@@ -29,6 +29,8 @@ export default async function handler(req, res) {
     }
     const AUTH = Buffer.from(`${ESCROW_EMAIL}:${ESCROW_API_KEY}`).toString('base64');
   
+    const buyerEmail = 'test-buyer@domaingrid.com'; // sandbox test email
+
     // --- Build Escrow Pay payload (SANDBOX) ---
     const payload = {
       currency,
@@ -49,8 +51,8 @@ export default async function handler(req, res) {
         fees: [{ type: 'escrow', split: 1, payer_customer: 'buyer' }]
       }],
       parties: [
-        { role: 'buyer',  customer: 'buyer', agreed: true },
-        { role: 'seller', customer: 'me',    agreed: true }
+        { role: 'buyer',  customer: buyerEmail, agreed: true },
+        { role: 'seller', customer: 'me',       agreed: true }
       ]
     };
   
