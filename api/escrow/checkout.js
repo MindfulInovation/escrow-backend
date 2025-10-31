@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     const AUTH = Buffer.from(`${ESCROW_EMAIL}:${ESCROW_API_KEY}`).toString('base64');
   
     const buyerEmail = 'test-buyer@domaingrid.com';   // sandbox test email
-    const sellerEmail = 'test-seller@domaingrid.com'; // sandbox seller email
+    const sellerEmail = 'process.env.harrison.g.witt@gmail.com'; // sandbox seller email
 
     const payload = {
         currency,
@@ -57,8 +57,8 @@ export default async function handler(req, res) {
         }],
         parties: [
             { role: 'buyer',  customer: buyerEmail,  agreed: true },
-            { role: 'seller', customer: sellerEmail, agreed: true }
-        ]
+            { role: 'seller', customer: sellerEmail, agreed: true, initiator: true }
+          ]          
     };
 
   
