@@ -29,33 +29,38 @@ export default async function handler(req, res) {
     }
     const AUTH = Buffer.from(`${ESCROW_EMAIL}:${ESCROW_API_KEY}`).toString('base64');
   
-    const buyerEmail = 'test-buyer@domaingrid.com'; // sandbox test email
+    const buyerEmail = 'test-buyer@domaingrid.com';   // sandbox test email
+    const sellerEmail = 'test-seller@domaingrid.com'; // sandbox seller email
 
-    // --- Build Escrow Pay payload (SANDBOX) ---
     const payload = {
-      currency,
-      description: `Sale of ${title}`,
-      reference,
-      return_url: 'https://domaingrid.com/thank-you',
-      redirect_type: 'automatic',
-      items: [{
-        title,
-        description: `Sale of ${title}`,   // ← add this line
-        type: 'domain_name',
-        inspection_period: 259200,
-        quantity: 1,
-        schedule: [{
-          amount: price,
-          payer_customer: 'buyer',
-          beneficiary_customer: 'me'
+        currency,
+        description: `Sale of ${title}`,
+        reference,
+        return_url: 'https://domaingrid.com/thank-you',
+        redirect_type: 'automatic',
+        items: [{
+            title,
+            description: `Sale of ${title}`,
+            type: 'domain_name',
+            inspection_period: 259200,
+            quantity: 1,
+            schedule: [{
+            amount: price,
+            payer_customer: buyerEmail,
+            beneficiary_customer: sellerEmail
+            }],
+            fees: [{
+            type: 'escrow',
+            split: 1,
+            payer_customer: buyerEmail
+            }]
         }],
-        fees: [{ type: 'escrow', split: 1, payer_customer: 'buyer' }]
-      }],      
-      parties: [
-        { role: 'buyer',  customer: buyerEmail, agreed: true },
-        { role: 'seller', customer: 'me',       agreed: true }
-      ]
+        parties: [
+            { role: 'buyer',  customer: buyerEmail,  agreed: true },
+            { role: 'seller', customer: sellerEmail, agreed: true }
+        ]
     };
+
   
     try {
         const resp = await fetch('https://api.escrow-sandbox.com/integration/pay/2018-03-31', {
