@@ -1,0 +1,60 @@
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const origin = req.headers.origin || '';
+  const allowed = /^(https:\/\/(www\.)?yourdomain\.com|https:\/\/yourdomain\.webflow\.io)$/i;
+  if (!allowed.test(origin)) return res.status(403).json({ error: 'Forbidden' });
+
+  const { title, price, currency = 'usd', reference = '' } = req.body || {};
+  if (!title || !Number.isFinite(price)) {
+    return res.status(400).json({ error: 'Bad payload' });
+  }
+
+  const ESCROW_EMAIL = process.env.ESCROW_EMAIL;
+  const ESCROW_API_KEY = process.env.ESCROW_API_KEY;
+  const AUTH = Buffer.from(`${ESCROW_EMAIL}:${ESCROW_API_KEY}`).toString('base64');
+
+  const payload = {
+    currency,
+    description: `Sale of ${title}`,
+    reference,
+    return_url: 'https://yourdomain.com/thank-you',
+    redirect_type: 'automatic',
+    items: [{
+      title,
+      type: 'domain_name',
+      inspection_period: 259200,
+      quantity: 1,
+      schedule: [{
+        amount: price,
+        payer_customer: 'buyer',
+        beneficiary_customer: 'me'
+      }],
+      fees: [{ type: 'escrow', split: '1', payer_customer: 'buyer' }]
+    }],
+    parties: [
+      { role: 'buyer',  customer: 'buyer', agreed: true },
+      { role: 'seller', customer: 'me',    agreed: true }
+    ]
+  };
+
+  try {
+    const resp = await fetch('https://api.escrow-sandbox.com/integration/pay/2018-03-31', {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${AUTH}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) {
+      const detail = await resp.text();
+      return res.status(502).json({ error: 'Escrow Pay failed', detail });
+    }
+
+    const data = await resp.json();
+    return res.status(200).json({ url: data.landing_page });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Server error' });
+  }
+}
+
