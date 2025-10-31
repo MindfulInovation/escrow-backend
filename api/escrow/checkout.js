@@ -40,8 +40,9 @@ export default async function handler(req, res) {
       redirect_type: 'automatic',
       items: [{
         title,
-        type: 'domain_name',           // change if needed
-        inspection_period: 259200,     // 3 days (seconds)
+        description: `Sale of ${title}`,   // ← add this line
+        type: 'domain_name',
+        inspection_period: 259200,
         quantity: 1,
         schedule: [{
           amount: price,
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
           beneficiary_customer: 'me'
         }],
         fees: [{ type: 'escrow', split: 1, payer_customer: 'buyer' }]
-      }],
+      }],      
       parties: [
         { role: 'buyer',  customer: buyerEmail, agreed: true },
         { role: 'seller', customer: 'me',       agreed: true }
