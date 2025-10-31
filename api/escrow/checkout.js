@@ -1,31 +1,44 @@
 // api/escrow/checkout.js
 export default async function handler(req, res) {
-    // Simple health check for GET requests (helps confirm deployment)
-    if (req.method === 'GET') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
-  
-    // --- CORS (TEMP: permissive for testing; we'll lock down later) ---
+        // --- CORS setup for DomainGrid ---
     const origin = req.headers.origin || '';
-    const allowed = /^(https:\/\/(www\.)?domaingrid\.com|https:\/\/domaingrid-f181b9\.webflow\.io)$/i;
-    if (!allowed.test(origin)) {
-      return res.status(403).json({ error: 'Forbidden (Origin not allowed)' });
+    const allowedOrigin = /^(https:\/\/(www\.)?domaingrid\.com)$/i.test(origin);
+
+    function setCors(res) {
+        if (allowedOrigin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Max-Age', '86400'); // cache preflight 24h
+        }
     }
-  
+
+    // Handle browser preflight
+    if (req.method === 'OPTIONS') {
+        setCors(res);
+        return res.status(204).end();
+    }
+
+    // Enforce origin after preflight
+    if (!allowedOrigin) {
+        setCors(res);
+        return res.status(403).json({ error: 'Forbidden (origin not allowed)' });
+    }
+
     // --- Validate input from Webflow/button ---
     const { title, price, currency = 'usd', reference = '' } = req.body || {};
     if (!title || !Number.isFinite(price)) {
-      return res.status(400).json({ error: 'Bad payload' });
+        setCors(res);
+        return res.status(400).json({ error: 'Bad payload' });
     }
   
     // --- Escrow auth from Vercel env vars ---
     const ESCROW_EMAIL = process.env.ESCROW_EMAIL;
     const ESCROW_API_KEY = process.env.ESCROW_API_KEY;
     if (!ESCROW_EMAIL || !ESCROW_API_KEY) {
-      return res.status(500).json({ error: 'Server not configured: missing Escrow credentials' });
+        setCors(res);
+        return res.status(500).json({ error: 'Server not configured: missing Escrow credentials' });
     }
     const AUTH = Buffer.from(`${ESCROW_EMAIL}:${ESCROW_API_KEY}`).toString('base64');
   
@@ -76,6 +89,7 @@ export default async function handler(req, res) {
         const text = await resp.text();                 // read raw body once
         if (!resp.ok) {
           console.error('Escrow Pay error', resp.status, text);
+          setCors(res);
           return res.status(502).json({
             error: 'Escrow Pay failed',
             status: resp.status,
@@ -88,12 +102,14 @@ export default async function handler(req, res) {
         try { data = JSON.parse(text); }
         catch { 
           console.error('Escrow Pay: non-JSON success body', text);
+          setCors(res);
           return res.status(502).json({ error: 'Unexpected response from Escrow', detail: text });
         }
-    
+        setCors(res);
         return res.status(200).json({ url: data.landing_page });
       } catch (e) {
         console.error('Server exception', e);
+        setCors(res);
         return res.status(500).json({ error: 'Server error' });
       }    
   }
