@@ -106,7 +106,12 @@ export default async function handler(req, res) {
           return res.status(502).json({ error: 'Unexpected response from Escrow', detail: text });
         }
         setCors(res);
-        return res.status(200).json({ url: data.landing_page });
+        return res.status(200).json({
+            url: data.landing_page,
+            transaction_id: data.transaction_id,
+            token: data.token
+        });
+
       } catch (e) {
         console.error('Server exception', e);
         setCors(res);
