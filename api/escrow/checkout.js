@@ -41,9 +41,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Server not configured: missing Escrow credentials' });
     }
     const AUTH = Buffer.from(`${ESCROW_EMAIL}:${ESCROW_API_KEY}`).toString('base64');
-  
-    const buyerEmail = 'test-buyer@domaingrid.com';   // sandbox test email
-    const sellerEmail = 'harrison.g.witt@gmail.com'; // sandbox seller email
 
     // Make reference unique to avoid "Transaction already exists"
     const baseRef = (reference || 'order').toString().slice(0, 40); // safety limit
