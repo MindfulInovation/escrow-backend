@@ -27,7 +27,18 @@ export default async function handler(req, res) {
     }
 
     // --- Validate input from Webflow/button ---
-    const { title, price, currency = 'usd', reference = '' } = req.body || {};
+    const {
+        title,
+        price,
+        currency = 'usd',
+        reference = '',
+        buyerEmail: buyerEmailRaw
+      } = req.body || {};
+      
+      const buyerEmail = (buyerEmailRaw && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(buyerEmailRaw))
+        ? buyerEmailRaw
+        : null;
+      
     if (!title || !Number.isFinite(price)) {
         setCors(res);
         return res.status(400).json({ error: 'Bad payload' });
@@ -46,6 +57,27 @@ export default async function handler(req, res) {
     const baseRef = (reference || 'order').toString().slice(0, 40); // safety limit
     const uniqueRef = `${baseRef}-${Date.now()}`;
 
+    const sellerEmail = ESCROW_EMAIL; // seller must be the API account email
+
+    const parties = [
+        { role: 'seller', customer: sellerEmail, agreed: true, initiator: true }
+    ];
+    if (buyerEmail) {
+        parties.unshift({ role: 'buyer', customer: buyerEmail, agreed: true });
+    }
+
+    const schedule = [{
+        amount: price,
+        payer_customer: buyerEmail || sellerEmail,
+        beneficiary_customer: sellerEmail
+    }];
+
+    const fees = [{
+        type: 'escrow',
+        split: 1,
+        payer_customer: buyerEmail || sellerEmail
+    }];
+
     const payload = {
         currency,
         description: `Sale of ${title}`,
@@ -58,24 +90,12 @@ export default async function handler(req, res) {
             type: 'domain_name',
             inspection_period: 259200,
             quantity: 1,
-            schedule: [{
-            amount: price,
-            payer_customer: buyerEmail,
-            beneficiary_customer: sellerEmail
-            }],
-            fees: [{
-            type: 'escrow',
-            split: 1,
-            payer_customer: buyerEmail
-            }]
+            schedule,
+            fees
         }],
-        parties: [
-            { role: 'buyer',  customer: buyerEmail,  agreed: true },
-            { role: 'seller', customer: sellerEmail, agreed: true, initiator: true }
-          ]          
+        parties
     };
 
-  
     try {
         const resp = await fetch('https://api.escrow.com/integration/pay/2018-03-31', {
           method: 'POST',
