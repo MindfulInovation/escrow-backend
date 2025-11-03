@@ -45,10 +45,14 @@ export default async function handler(req, res) {
     const buyerEmail = 'test-buyer@domaingrid.com';   // sandbox test email
     const sellerEmail = 'harrison.g.witt@gmail.com'; // sandbox seller email
 
+    // Make reference unique to avoid "Transaction already exists"
+    const baseRef = (reference || 'order').toString().slice(0, 40); // safety limit
+    const uniqueRef = `${baseRef}-${Date.now()}`;
+
     const payload = {
         currency,
         description: `Sale of ${title}`,
-        reference,
+        reference: uniqueRef,
         return_url: 'https://domaingrid.com/thank-you',
         redirect_type: 'automatic',
         items: [{
