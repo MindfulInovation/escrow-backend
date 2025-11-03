@@ -25,20 +25,14 @@ export default async function handler(req, res) {
         setCors(res);
         return res.status(403).json({ error: 'Forbidden (origin not allowed)' });
     }
-
-    // --- Validate input from Webflow/button ---
+      
     const {
         title,
         price,
         currency = 'usd',
-        reference = '',
-        buyerEmail: buyerEmailRaw
-      } = req.body || {};
-      
-      const buyerEmail = (buyerEmailRaw && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(buyerEmailRaw))
-        ? buyerEmailRaw
-        : null;
-      
+        reference = ''
+    } = req.body || {};      
+
     if (!title || !Number.isFinite(price)) {
         setCors(res);
         return res.status(400).json({ error: 'Bad payload' });
@@ -72,16 +66,16 @@ export default async function handler(req, res) {
 
     const schedule = [{
         amount: price,
-        payer_customer: buyerEmail || sellerEmail,
-        beneficiary_customer: sellerEmail
+        payer_customer: buyerEmail,      // buyer pays
+        beneficiary_customer: sellerEmail // you receive funds
     }];
-
+      
     const fees = [{
         type: 'escrow',
         split: 1,
-        payer_customer: buyerEmail || sellerEmail
+        payer_customer: buyerEmail       // fees charged to buyer
     }];
-
+      
     const payload = {
         currency,
         description: `Sale of ${title}`,
