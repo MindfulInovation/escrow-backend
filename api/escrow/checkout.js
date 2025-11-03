@@ -57,7 +57,11 @@ export default async function handler(req, res) {
     const baseRef = (reference || 'order').toString().slice(0, 40); // safety limit
     const uniqueRef = `${baseRef}-${Date.now()}`;
 
-    const sellerEmail = ESCROW_EMAIL; // seller must be the API account email
+    // Fixed placeholder buyer email (will be prefilled on Escrow checkout)
+    const buyerEmail = 'example@domaingrid.com';
+
+    // Seller must be the API account email so Escrow recognizes the initiator
+    const sellerEmail = ESCROW_EMAIL;
 
     const parties = [
         { role: 'seller', customer: sellerEmail, agreed: true, initiator: true }
