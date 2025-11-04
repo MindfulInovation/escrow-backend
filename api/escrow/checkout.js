@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     const uniqueRef = `${baseRef}-${Date.now()}`;
 
     // Fixed placeholder buyer email (will be prefilled on Escrow checkout)
-    const buyerEmail = 'example@domaingrid.com';
+    const buyerEmail = 'example@example.com';
 
     // Seller must be the API account email so Escrow recognizes the initiator
     const sellerEmail = ESCROW_EMAIL;
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
         currency,
         description: `Sale of ${title}`,
         reference: uniqueRef,
-        return_url: 'https://domaingrid.com/thank-you',
+        return_url: 'https://www.domaingrid.com/thank-you',
         redirect_type: 'automatic',
         items: [{
             title,
